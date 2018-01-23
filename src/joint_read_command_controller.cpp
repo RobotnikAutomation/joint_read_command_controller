@@ -46,7 +46,6 @@ bool JointReadCommandController::init(hardware_interface::RobotHW* const robot_h
 {
   hardware_interface::JointStateInterface* js_iface = robot_hw->get<hardware_interface::JointStateInterface>();
 
-  std::cout << js_iface << "asadasdadsadasdasdasdda\n";
   hardware_interface::PositionReadInterface* pos_iface = robot_hw->get<hardware_interface::PositionReadInterface>();
   hardware_interface::VelocityReadInterface* vel_iface = robot_hw->get<hardware_interface::VelocityReadInterface>();
   hardware_interface::EffortReadInterface* eff_iface = robot_hw->get<hardware_interface::EffortReadInterface>();
@@ -86,28 +85,20 @@ bool JointReadCommandController::init(hardware_interface::RobotHW* const robot_h
     joint_names.insert(joint_names.end(), eff_names.begin(), eff_names.end());
   }
 
-  ROS_INFO("got %lu handles", joint_reads_.size());
-  //    num_hw_joints_ = joint_names.size();
-  //
-  //    ROS_INFO("Got %lu joints", joint_names.size());
-  //    for (unsigned i=0; i<num_hw_joints_; i++)
-  //      ROS_INFO("Test Got joint %s", joint_names[i].c_str());
-  //
-  //    JointHandle pos_handle = hw
-
-  //    // get publishing period
-  //    if (!controller_nh.getParam("publish_rate", publish_rate_)){
-  //      ROS_ERROR("Parameter 'publish_rate' not set");
-  //      return false;
-  //    }
-  //
-  //    // realtime publisher
-  realtime_pub_.reset(new realtime_tools::RealtimePublisher<sensor_msgs::JointState>(root_nh, "joint_commands", 4));
-  //
-  //    // get joints and allocate message
-  for (unsigned i = 0; i < joint_names.size(); i++)
+  // get publishing period
+  if (!controller_nh.getParam("publish_rate", publish_rate_))
   {
-    realtime_pub_->msg_.name.push_back(joint_names[i]);
+    publish_rate_ = 0;
+    ROS_WARN("Parameter 'publish_rate' not set. It will publish at control frequency");
+  }
+
+  // realtime publisher
+  realtime_pub_.reset(new realtime_tools::RealtimePublisher<sensor_msgs::JointState>(root_nh, "joint_commands", 4));
+
+  // get joints and allocate message
+  for (unsigned i = 0; i < joint_reads_.size(); i++)
+  {
+    realtime_pub_->msg_.name.push_back(joint_reads_[i].joint_name);
     realtime_pub_->msg_.position.push_back(0.0);
     realtime_pub_->msg_.velocity.push_back(0.0);
     realtime_pub_->msg_.effort.push_back(0.0);
@@ -124,15 +115,15 @@ void JointReadCommandController::starting(const ros::Time& time)
 
 void JointReadCommandController::update(const ros::Time& time, const ros::Duration& /*period*/)
 {
-  //  std::cout << "AAAAAAAAAAAAAAAAAAAAAAA" << joint_reads_[0].handle.getCommand() << "\n";
   // limit rate of publishing
-  //    if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0/publish_rate_) < time){
-  //
-  //      // try to publish
+  if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) > time)
+    return;
+
+  // try to publish
   if (realtime_pub_->trylock())
   {
     // we're actually publishing, so increment time
-    // last_publish_time_ = last_publish_time_ + ros::Duration(1.0/publish_rate_);
+    last_publish_time_ = time;  // last_publish_time_ + ros::Duration(1.0/publish_rate_);
 
     // populate joint state message:
     // - fill only joints that are present in the EffortReadInterface, i.e. indices [0, num_hw_joints_)
@@ -146,11 +137,8 @@ void JointReadCommandController::update(const ros::Time& time, const ros::Durati
         realtime_pub_->msg_.velocity[i] = joint_reads_[i].handle.getCommand();
       if (joint_reads_[i].type == "eff")
         realtime_pub_->msg_.effort[i] = joint_reads_[i].handle.getCommand();
-
-      ROS_INFO_STREAM_THROTTLE(1, realtime_pub_->msg_);
     }
     realtime_pub_->unlockAndPublish();
-    //      }
   }
 }
 
