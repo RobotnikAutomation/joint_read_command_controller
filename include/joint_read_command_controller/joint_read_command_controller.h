@@ -64,7 +64,9 @@ class JointReadCommandController
                                                             hardware_interface::EffortReadInterface>
 {
 public:
-  JointReadCommandController() : publish_rate_(0.0)
+  JointReadCommandController() : publish_rate_(0.0), controller_interface::MultiInterfaceController<hardware_interface::PositionReadInterface,
+                                                            hardware_interface::VelocityReadInterface,
+                                                            hardware_interface::EffortReadInterface> (true) // allows optional interfaces
   {
   }
 
