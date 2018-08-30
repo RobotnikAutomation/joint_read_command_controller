@@ -11,8 +11,11 @@ As a ROS Control controller, specify it on a yaml and then load it.
 ## Example Configuration
 
 joint_read_command_controller:
-  type: joint_read_command_controller/JointReadCommandController
-  publish_rate: 65.0
+
+&nbsp;&nbsp;&nbsp;&nbsp;type: joint_read_command_controller/JointReadCommandController
+  
+&nbsp;&nbsp;&nbsp;&nbsp;publish_rate: 65.0
+
 
 If publish_rate parameter is not set or is 0, publish rate will be that of the control rate.
 
