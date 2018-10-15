@@ -27,6 +27,4 @@ install(TARGETS ${PROJECT_NAME}
   )
 
 install(FILES joint_read_command_plugin.xml
-              joint_read_command_controller.yaml
-              joint_read_command_controller.launch
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
